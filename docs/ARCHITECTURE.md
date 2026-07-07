@@ -18,11 +18,11 @@ flowchart TB
 
     subgraph LOOP["Per-unit loop — every unit of work"]
         direction TB
-        P["1 · PLAN\nclassify blast radius"]
-        B["2 · BUILD\n/coder-tdd-qa · test-first"]
-        V["3 · VERIFY\n/proof-gate · refute the claim"]
-        R["4 · REVIEW\nproportionate lane:\n/audit-lite → /audit-team → /gauntletgate walkthrough"]
-        M["5 · MERGE\ngreen PR → main · standing auth"]
+        P["1 · PLAN<br/>classify blast radius"]
+        B["2 · BUILD<br/>/coder-tdd-qa · test-first"]
+        V["3 · VERIFY<br/>/proof-gate · refute the claim"]
+        R["4 · REVIEW<br/>proportionate lane:<br/>/audit-lite → /audit-team → /gauntletgate walkthrough"]
+        M["5 · MERGE<br/>green PR → main · standing auth"]
         P --> B --> V --> R --> M
         V -. "low-blast: collapse" .-> R
     end
@@ -38,7 +38,7 @@ flowchart TB
         G --> C --> D --> RB
     end
 
-    REL --> TAG{"OWNER go/no-go\non the tag"}
+    REL --> TAG{"OWNER go/no-go<br/>on the tag"}
     TAG -->|go| SHIP["tag / release"]
     TAG -->|no| LOOP
 
@@ -53,7 +53,7 @@ release gauntlet route back into BUILD. Nothing routes *around* a gate.
 
 ```mermaid
 flowchart LR
-    DRS["dev-rigor-stack\n(orchestrator)"]
+    DRS["dev-rigor-stack<br/>(orchestrator)"]
     DRS --> B2["BUILD → coder-tdd-qa"]
     DRS --> V2["VERIFY → proof-gate"]
     DRS --> R2["REVIEW → audit-lite / audit-team / gauntletgate walkthrough"]

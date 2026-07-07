@@ -170,11 +170,14 @@ decision, every time.
 
 ## Dependencies & degrade-if-missing
 
-This stack expects sibling skills co-installed — **coder-tdd-qa, proof-gate, the
-gauntletgate / audit-lite / audit-team family, and ponytail** (the ladder + code-scope
-rule). The stack bundle installs them together. If a lane's skill is absent, the
-coordinator runs the equivalent discipline inline, **says so**, and still spawns a fresh
-sub-agent to run it — degrade never means the coordinator reviews its own work.
+This stack expects its sibling skills co-installed — **coder-tdd-qa, proof-gate, and the
+gauntletgate / audit-lite / audit-team family**. These ship in the stack bundle and
+install together with it. It also references **ponytail** (the ladder + code-scope rule)
+as an *external, optional* dependency: a separate third-party plugin you install on its
+own — not bundled here — and the stack degrades gracefully without it. If any lane's
+skill is absent, the coordinator runs the equivalent discipline inline, **says so**, and
+still spawns a fresh sub-agent to run it — degrade never means the coordinator reviews
+its own work.
 
 ## Cross-cutting, always on
 
