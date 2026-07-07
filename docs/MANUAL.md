@@ -135,9 +135,19 @@ tool — never a bare recursing agent. Each worker states its tier and moderates
 
 ### Install, configure, export
 
-- **Install** (Claude Code skills): `./install.ps1` (Windows) or `./install.sh`
+- **Install** (skills): `./install.ps1` (Windows) or `./install.sh`
   (macOS/Linux/Git Bash). Targets `~/.claude/skills` or `$CLAUDE_CONFIG_DIR/skills`.
-  Idempotent — re-run to update.
+  Idempotent — re-run to update. Two flags on both:
+  - `--with-ponytail` / `-WithPonytail` — clone [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail)
+    and add its skills (**skills only** — ponytail's always-on hooks are not wired). If git or
+    the network is unavailable, it warns and skips; the stack skills still install.
+  - `--target <dir>` / `-Target <dir>` — install into any directory, e.g. Codex's
+    `~/.codex/skills`.
+- **Installing from inside a Cowork or Codex session** (the common case, no terminal): tell
+  the agent to install the stack from the repo. It copies `skills/*` into the host's skills
+  directory (`~/.claude/skills` for Claude, `~/.codex/skills` for Codex) and can offer the
+  ponytail lane as a yes/no. `manifest.json` marks what's core vs. the optional external
+  ponytail dependency, so the installing agent knows what's opt-in.
 - **Configure**: fold [`config/CLAUDE.md`](../config/CLAUDE.md) into your own `CLAUDE.md`
   to auto-apply the stack. Generic template; review before adopting.
 - **Cross-AI export**: `./export/export-portable.sh` (or `.ps1`) writes

@@ -18,7 +18,8 @@
       "license": "MIT",
       "author": "DietrichGebert",
       "optional": true,
-      "note": "Third-party code-minimalism plugin. The dev-rigor-stack skill references the 'ponytail ladder' and 'ponytail governs code scope'. Not bundled here (not our work to redistribute); install separately if you want that lane. The stack degrades gracefully without it."
+      "install": "Not bundled (not our work to redistribute). Fetch on request with the installer flag `--with-ponytail` / `-WithPonytail`, which clones this repo and adds its skills (skills only; always-on hooks not wired). Or install it yourself.",
+      "note": "Third-party code-minimalism / anti-bloat plugin. The dev-rigor-stack skill references the 'ponytail ladder' (PLAN) and 'ponytail governs code scope'. Supplies the stack's only active minimalism discipline. The stack degrades gracefully without it."
     }
   ],
   "config": {

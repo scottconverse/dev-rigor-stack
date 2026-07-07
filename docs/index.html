@@ -96,8 +96,12 @@ bundled; the stack works without it.</p>
 <p><strong>As Claude Code skills:</strong></p>
 <pre>git clone https://github.com/scottconverse/dev-rigor-stack
 cd dev-rigor-stack
-./install.ps1     # Windows
-./install.sh      # macOS / Linux / Git Bash</pre>
+./install.sh                     # macOS / Linux / Git Bash  (./install.ps1 on Windows)
+./install.sh --with-ponytail     # also add the optional code-minimalism lane
+./install.sh --target ~/.codex/skills   # install elsewhere, e.g. Codex</pre>
+<p><strong>Inside a Cowork or Codex session</strong> (no terminal): just ask the agent to
+install it from the repo — it copies the skills into the right place and can offer the
+ponytail lane as a yes/no.</p>
 <p><strong>For any other agent</strong> (ChatGPT, Gemini, Codex): run
 <code>./export/export-portable.sh</code> and paste the generated <code>portable-bundle.md</code>
 into its system prompt. Claude-specific mechanics read as plain guidance — nothing is

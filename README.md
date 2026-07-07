@@ -41,9 +41,10 @@ skill](skills/dev-rigor-stack/SKILL.md).
 | [`gauntletgate`](skills/gauntletgate/SKILL.md) | **REVIEW + release** — adversarial stage-gate (lite / walkthrough / full) |
 
 All six are MIT-licensed and authored by the repo owner. **ponytail** — the
-code-minimalism lane the stack references — is a separate third-party MIT plugin by
-[DietrichGebert](https://github.com/DietrichGebert/ponytail); it is **not bundled**.
-Install it separately if you want that lane. The stack degrades gracefully without it.
+code-minimalism / anti-bloat lane the stack references — is a separate third-party MIT
+plugin by [DietrichGebert](https://github.com/DietrichGebert/ponytail); it is **not
+bundled**. Add it with `--with-ponytail` (below) or install it yourself. The stack works
+without it — you only lose the "what can I delete" discipline.
 
 ## Quick start
 
@@ -56,8 +57,29 @@ cd dev-rigor-stack
 ./install.sh      # macOS / Linux / Git Bash
 ```
 
-Installs into `~/.claude/skills` (or `$CLAUDE_CONFIG_DIR/skills` if set). Restart Claude
-Code to pick them up. Re-running updates in place — no path assumptions, safe to repeat.
+Installs into `~/.claude/skills` (or `$CLAUDE_CONFIG_DIR/skills` if set). Restart your
+agent to pick them up. Re-running updates in place — no path assumptions, safe to repeat.
+
+Two flags on both installers:
+
+```sh
+./install.sh --with-ponytail                # also fetch the optional ponytail lane from its repo
+./install.sh --target ~/.codex/skills       # install somewhere else, e.g. Codex
+./install.ps1 -WithPonytail                 # (PowerShell equivalents)
+./install.ps1 -Target ~/.codex/skills
+```
+
+`--with-ponytail` clones DietrichGebert's repo and adds its skills (skills only — it does
+**not** wire ponytail's always-on hooks); if git or the network is unavailable it warns and
+skips, leaving the stack skills installed. `--target` sends the skills anywhere — use it for
+Codex (`~/.codex/skills`) or any non-default host.
+
+**Installing from inside a Cowork or Codex session** (the common case — no terminal): just
+tell the agent *"install the dev-rigor-stack from github.com/scottconverse/dev-rigor-stack"*.
+It clones the repo, copies `skills/*` into the host's skills directory (`~/.claude/skills`
+for Claude, `~/.codex/skills` for Codex), and can offer the ponytail lane as a yes/no. The
+`manifest.json` lists the skills and marks ponytail as an optional external dependency so the
+agent knows what's core and what's opt-in.
 
 **For any other agent (ChatGPT, Gemini, Codex, …):**
 
