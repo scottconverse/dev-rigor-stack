@@ -76,13 +76,17 @@ tag (a decision killed in 0.1 is still worth not reopening in 0.4).
    survives if they cannot refute it. For a low-blast unit, VERIFY and REVIEW may
    collapse into one adversarial pass — don't run both formally over a one-liner.
 
-4. REVIEW — the coordinator picks the proportionate GauntletGate lane for what this
+4. REVIEW — the coordinator picks the proportionate review lane for what this
    slice touched, and dispatches a sonnet/haiku sub-agent to run it with that skill as
    a toolset:
    • /audit-lite — default; a scoped diff, a slice, an end-of-slice read.
    • /audit-team — escalate for high-blast units.
    • /gauntletgate walkthrough — user-facing wiring: a real end-to-end run hunting dead
      links, dead buttons, broken flows, the way a user hits it.
+   (These are the per-unit *review reports*. GauntletGate as the full advancement
+   stage-gate — its `lite`/`full` lanes plus a pass/fail verdict — belongs to the RELEASE
+   gate below, not here. Its `lite`/`full` lanes re-run the same discipline as /audit-lite
+   and /audit-team, self-contained, because a gate can't invoke a separate skill mid-run.)
    **What counts as a finding:** a REAL defect. An incorrect finding or tool
    false-positive is classified OUT, with the reason it isn't real — that is the
    boundary of "finding," not a back door. Guard both failure modes: never contort
@@ -171,14 +175,22 @@ decision, every time.
 
 ## Dependencies & degrade-if-missing
 
-This stack expects its sibling skills co-installed — **coder-tdd-qa, proof-gate, and the
-gauntletgate / audit-lite / audit-team family**. These ship in the stack bundle and
-install together with it. An always-on **dev-rigor reflex** — a one-page distillation of
-this discipline — ships alongside as a SessionStart hook and primes every session; it is a
-convenience layer, not a dependency, and the full discipline lives here. If any lane's
-skill is absent, the coordinator runs the equivalent discipline inline, **says so**, and
-still spawns a fresh sub-agent to run it — degrade never means the coordinator reviews
-its own work.
+The installer bundles and installs all the sibling skills together — **coder-tdd-qa,
+proof-gate, and the gauntletgate / audit-lite / audit-team family** — so a normal install
+has every lane present. An always-on **dev-rigor reflex** — a one-page distillation of
+this discipline — installs alongside as a SessionStart hook and primes every session; it
+is a convenience layer, not a dependency, and the full discipline lives here. The degrade
+path is a fallback for the unusual case (a partial or `--target` install, or a skill
+manually removed): if a lane's skill is absent, the coordinator runs the equivalent
+discipline inline, **says so**, and still spawns a fresh sub-agent to run it — degrade
+never means the coordinator reviews its own work.
+
+**audit-lite / audit-team vs. gauntletgate** overlap by design — the same review
+discipline in two packagings. The standalone audits are the per-unit *review reports*
+(gate 4); gauntletgate is the release-altitude *advancement gate*, and its `lite`/`full`
+lanes re-run that same discipline self-contained (a gate can't invoke a separate skill
+mid-run) plus a pass/fail verdict, a first-run attestation, and the `walkthrough` lane.
+Same discipline, different altitude — a report vs. a gate.
 
 ## Cross-cutting, always on
 

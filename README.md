@@ -48,7 +48,13 @@ skill](skills/dev-rigor-stack/SKILL.md).
 
 The six skills and the reflex are MIT-licensed and authored by the repo owner. The reflex
 is the always-on layer (see [The always-on reflex](#the-always-on-reflex)); the skills are
-invoked per gate.
+invoked per gate. The installer installs **all** of them.
+
+`audit-lite`/`audit-team` and `gauntletgate` overlap by design — the same review discipline
+in two packagings: the standalone audits are the per-unit **review reports**, while
+`gauntletgate` is the release-altitude **advancement gate** (its `lite`/`full` lanes re-run
+that discipline self-contained, plus a pass/fail verdict, first-run attestation, and the
+`walkthrough` lane). A report vs. a gate.
 
 ## Quick start
 

@@ -60,9 +60,15 @@ flowchart LR
     DRS --> G2["RELEASE → gauntletgate all + proof-gate claim-refutation"]
 ```
 
-The orchestrator holds the discipline; each gate delegates to the skill built for it. If
-a lane's skill is absent, the coordinator runs the equivalent discipline inline, says so,
-and still spawns a fresh sub-agent — it never reviews its own work.
+The orchestrator holds the discipline; each gate delegates to the skill built for it. The
+installer bundles all of these, so a normal install has every lane; if a skill is somehow
+absent (a partial or `--target` install), the coordinator runs the equivalent discipline
+inline, says so, and still spawns a fresh sub-agent — it never reviews its own work.
+
+`audit-lite`/`audit-team` and `gauntletgate` overlap by design: the same review discipline
+in two packagings. The standalone audits are the per-unit *review reports*; gauntletgate is
+the release-altitude *advancement gate* whose `lite`/`full` lanes re-run that discipline
+self-contained and add a pass/fail verdict. A report vs. a gate.
 
 ## The always-on reflex
 

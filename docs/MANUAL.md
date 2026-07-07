@@ -157,8 +157,18 @@ tool — never a bare recursing agent. Each worker states its tier and moderates
 
 ### Dependencies & degrade
 
-The stack expects its sibling skills co-installed (`coder-tdd-qa`, `proof-gate`, the
-`gauntletgate` / `audit-lite` / `audit-team` family). The always-on reflex is a convenience
-layer, not a dependency — the full discipline lives in the skill. If a lane's skill is
-absent, the coordinator runs the equivalent discipline inline, says so, and still spawns a
-fresh sub-agent — degrade never means self-review.
+The installer bundles and installs all the sibling skills together (`coder-tdd-qa`,
+`proof-gate`, the `gauntletgate` / `audit-lite` / `audit-team` family) — a normal install
+has every lane present. The always-on reflex installs alongside; it's a convenience layer,
+not a dependency — the full discipline lives in the skill. The degrade path is only a
+fallback for a partial or `--target` install: if a lane's skill is absent, the coordinator
+runs the equivalent discipline inline, says so, and still spawns a fresh sub-agent —
+degrade never means self-review.
+
+**audit-lite / audit-team vs. gauntletgate.** These overlap by design — the same review
+discipline in two packagings. `audit-lite` (light) and `audit-team` (deep, five-role) are
+standalone *review reports* used at the per-unit REVIEW gate. `gauntletgate` is the
+*advancement stage-gate* used at the release boundary: its `lite`/`full` lanes re-run that
+same discipline self-contained (a gate can't invoke a separate skill mid-run) and add a
+pass/fail verdict, a first-run attestation, and the `walkthrough` lane. Same discipline,
+different altitude — a report vs. a gate.
