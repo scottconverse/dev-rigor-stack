@@ -31,8 +31,20 @@ if (fs.existsSync(settingsPath)) {
     process.exit(1);
   }
 }
+// Shape guard: a syntactically-valid settings.json whose hooks aren't shaped the way
+// Claude Code defines them gets the same refusal as corrupt JSON — never a crash,
+// never a rewrite of a file we don't understand.
+function refuseShape(what) {
+  console.error('  FAIL  ' + settingsPath + ' has an unexpected shape (' + what + ').');
+  console.error('        Refusing to touch it — fix the file (or remove it) and re-run.');
+  process.exit(1);
+}
+if ('hooks' in s && (typeof s.hooks !== 'object' || s.hooks === null || Array.isArray(s.hooks))) {
+  refuseShape('"hooks" is not an object');
+}
 s.hooks = s.hooks || {};
 for (const ev of ['SessionStart', 'SubagentStart', 'UserPromptSubmit', 'PostToolUse', 'Stop']) {
+  if (ev in s.hooks && !Array.isArray(s.hooks[ev])) refuseShape('"hooks.' + ev + '" is not an array');
   s.hooks[ev] = s.hooks[ev] || [];
 }
 

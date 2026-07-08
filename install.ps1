@@ -53,6 +53,7 @@ foreach ($src in Get-ChildItem -Directory $SkillsSrc) {
 Write-Host "`nInstalled $installed stack skill(s) to $Dest"
 
 # Always-on reflex hook -- default Claude install only (skipped for a custom -Target).
+$HooksWired = $false
 if ((-not $Target) -and (Test-Path $PluginSrc)) {
   $PluginDest = Join-Path $ClaudeDir 'dev-rigor-plugin'
   if (Test-Path $PluginDest) { Remove-Item -Recurse -Force $PluginDest }
@@ -62,21 +63,31 @@ if ((-not $Target) -and (Test-Path $PluginSrc)) {
   $node = Get-Command node -ErrorAction SilentlyContinue
   if ($node) {
     node (Join-Path $PluginDest 'hooks/wire-settings.js') $ClaudeDir
+    if ($LASTEXITCODE -eq 0) {
+      $HooksWired = $true
+    } else {
+      Write-Host "  WARN  hook wiring refused (see message above). Skills installed fine;"
+      Write-Host "        fix settings.json and re-run, or wire by hand -- see README,"
+      Write-Host "        section 'Manual hook wiring'."
+    }
   } else {
     Write-Host "  WARN  Node.js not found -- it is REQUIRED for the hooks. Skills installed fine;"
-    Write-Host "        plugin files copied but no hooks were wired. Install Node.js"
-    Write-Host "        and re-run, or add the hooks to settings.json by hand (see README)."
+    Write-Host "        plugin files copied but NO hooks were wired. Install Node.js and re-run,"
+    Write-Host "        or wire by hand -- see README, section 'Manual hook wiring'."
   }
 } elseif ($Target) {
   Write-Host "  note  -Target set: skills only; the hooks are Claude-specific and were not wired."
 }
 
 Write-Host "`nNext steps:"
-if (-not $Target) {
+if ($HooksWired) {
   Write-Host "  * The reflex activates on your next session start (or /compact); the rigor router and"
   Write-Host "    grounding check activate immediately for new sessions. Nothing else to run."
-} else {
+} elseif ($Target) {
   Write-Host "  * Skills only were installed (-Target); the always-on hooks were not wired."
+} else {
+  Write-Host "  * Skills installed, but the always-on hooks are NOT active (see WARN above)."
+  Write-Host "    Install Node.js and re-run, or follow README 'Manual hook wiring'."
 }
 Write-Host "  * Optional: fold config/CLAUDE.md into your own ~/.claude/CLAUDE.md so the stack applies"
 Write-Host "    automatically even without the hook. Review it first -- do not blindly overwrite your CLAUDE.md."

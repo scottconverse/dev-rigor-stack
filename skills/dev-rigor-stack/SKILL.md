@@ -14,7 +14,7 @@ description: >
 license: MIT
 ---
 
-# Standing dev rigor stack (v1.5.0)
+# Standing dev rigor stack (v1.5.1)
 
 Two altitudes. The **per-unit loop** (gates 1–5) applies to EVERY unit of work — a
 fix, a module, a feature. The **release gate** fires once per version, at the tag

@@ -136,6 +136,25 @@ says the hooks were skipped. Edit the markdown under `~/.claude/dev-rigor-plugin
 reflex page, or any file in `disciplines/`) to tune the wording; the hooks re-read them,
 no code change needed.
 
+### Manual hook wiring
+
+Only needed if the installer said the hooks were skipped (no Node.js) or refused
+(unreadable `settings.json`). After installing Node, just re-run the installer — it
+wires everything. To wire by hand instead, add these entries to `~/.claude/settings.json`
+(merge into your existing `hooks` object; replace `HOME` with your home directory):
+
+```json
+{
+  "hooks": {
+    "SessionStart": [{ "matcher": "startup|resume|clear|compact", "hooks": [{ "type": "command", "command": "node \"HOME/.claude/dev-rigor-plugin/hooks/dev-rigor-activate.js\"; exit 0", "timeout": 5 }] }],
+    "SubagentStart": [{ "hooks": [{ "type": "command", "command": "node \"HOME/.claude/dev-rigor-plugin/hooks/dev-rigor-activate.js\" subagent; exit 0", "timeout": 5 }] }],
+    "UserPromptSubmit": [{ "hooks": [{ "type": "command", "command": "node \"HOME/.claude/dev-rigor-plugin/hooks/dev-rigor-router.js\"; exit 0", "timeout": 5 }] }],
+    "PostToolUse": [{ "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell|.*(preview|chrome|browser|computer|screenshot|navigate|snapshot|exec|run|test|shell|terminal|jupyter|notebook|ide|eval).*", "hooks": [{ "type": "command", "command": "node \"HOME/.claude/dev-rigor-plugin/hooks/dev-rigor-ground.js\" record; exit 0", "timeout": 5 }] }],
+    "Stop": [{ "hooks": [{ "type": "command", "command": "node \"HOME/.claude/dev-rigor-plugin/hooks/dev-rigor-ground.js\" check; exit 0", "timeout": 5 }] }]
+  }
+}
+```
+
 **For any other agent (ChatGPT, Gemini, Codex, …):**
 
 ```sh

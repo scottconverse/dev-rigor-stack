@@ -66,6 +66,7 @@ echo
 echo "Installed $installed stack skill(s) to $DEST"
 
 # Always-on reflex hook — default Claude install only (skipped for a custom --target).
+HOOKS_WIRED=0
 if [ -z "$TARGET" ] && [ -d "$PLUGIN_SRC" ]; then
   PLUGIN_DEST="$CLAUDE_DIR/dev-rigor-plugin"
   rm -rf "$PLUGIN_DEST"
@@ -73,11 +74,17 @@ if [ -z "$TARGET" ] && [ -d "$PLUGIN_SRC" ]; then
   cp -r "$PLUGIN_SRC/." "$PLUGIN_DEST/"
   echo "  ok    dev-rigor plugin (reflex + router + grounding) -> $PLUGIN_DEST"
   if command -v node >/dev/null 2>&1; then
-    node "$PLUGIN_DEST/hooks/wire-settings.js" "$CLAUDE_DIR"
+    if node "$PLUGIN_DEST/hooks/wire-settings.js" "$CLAUDE_DIR"; then
+      HOOKS_WIRED=1
+    else
+      echo "  WARN  hook wiring refused (see message above). Skills installed fine;"
+      echo "        fix settings.json and re-run, or wire by hand — see README,"
+      echo "        section \"Manual hook wiring\"."
+    fi
   else
     echo "  WARN  Node.js not found — it is REQUIRED for the hooks. Skills installed fine;"
-    echo "        plugin files copied but no hooks were wired. Install Node.js"
-    echo "        and re-run, or add the hooks to settings.json by hand (see README)."
+    echo "        plugin files copied but NO hooks were wired. Install Node.js and re-run,"
+    echo "        or wire by hand — see README, section \"Manual hook wiring\"."
   fi
 elif [ -n "$TARGET" ]; then
   echo "  note  --target set: skills only; the hooks are Claude-specific and were not wired."
@@ -85,11 +92,14 @@ fi
 
 echo
 echo "Next steps:"
-if [ -z "$TARGET" ]; then
+if [ "$HOOKS_WIRED" = "1" ]; then
   echo "  * The reflex activates on your next session start (or /compact); the rigor router and"
   echo "    grounding check activate immediately for new sessions. Nothing else to run."
-else
+elif [ -n "$TARGET" ]; then
   echo "  * Skills only were installed (--target); the always-on hooks were not wired."
+else
+  echo "  * Skills installed, but the always-on hooks are NOT active (see WARN above)."
+  echo "    Install Node.js and re-run, or follow README \"Manual hook wiring\"."
 fi
 echo "  * Optional: fold config/CLAUDE.md into your own ~/.claude/CLAUDE.md so the stack applies"
 echo "    automatically even without the hook. Review it first -- do not blindly overwrite your CLAUDE.md."

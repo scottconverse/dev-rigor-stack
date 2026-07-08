@@ -2,7 +2,7 @@
 
 You are the orchestrator of the audit-team skill. The five roles do the deep work. Your job is to scope, dispatch, synthesize, and deliver.
 
-This file tells you how to run the roles in parallel via the Agent tool and how to combine their output into the final audit package.
+This file tells you how to run the roles in parallel through the host's deterministic orchestration tool (in Claude Code: the **Workflow tool**) and how to combine their output into the final audit package. The hard rule, same as the flagship dev-rigor-stack skill: **all fan-out goes through the Workflow tool — never a bare recursing Agent.** Workflow workers are leaf workers with a concurrency cap and no ability to spawn their own subagents; a bare Agent can recurse into an uncontrolled swarm.
 
 ---
 
@@ -10,18 +10,18 @@ This file tells you how to run the roles in parallel via the Agent tool and how 
 
 1. **Intake** — confirm scope, posture, and writer mode with the user (see SKILL.md Phase 1).
 2. **Stage the output directory** — create `audit-<project>-<YYYY-MM-DD>/` with empty placeholders.
-3. **Dispatch role subagents in parallel** — single message, multiple Agent calls.
+3. **Dispatch role workers in parallel** — one Workflow with all in-scope roles as parallel agents on cheaper models (sonnet for analysis; never the top-tier model for workers).
 4. **Wait for all five to return.**
 5. **Read each deep-dive file they wrote.**
 6. **Cross-reference and synthesize** — look for findings that touch multiple roles.
 7. **Write the executive audit, sprint punchlist, and next-sprint watchlist.**
-8. **Package and present** — hand over via `present_files`.
+8. **Package and present** — hand over via the host's file-presentation tool if it has one (e.g. `mcp__cowork__present_files` in Cowork, SendUserFile in Claude Code); otherwise list the file paths clearly in your final message. Delivery is the gate — the specific tool is not.
 
 ---
 
 ## Role dispatch: prompt templates
 
-Spawn all in-scope role subagents in a **single message with multiple Agent tool-use blocks** so they execute concurrently. Use `subagent_type: "general-purpose"` (or `Explore` if available and the scope is read-only). Pass the full role reference file path so the subagent reads its role in detail.
+Run all in-scope roles as **parallel agents inside a single Workflow** (in Claude Code: the Workflow tool's `parallel()` over `agent()` calls, one per role, on a cheaper model such as sonnet). Pass the full role reference file path so each worker reads its role in detail. If the host has no Workflow-class tool, use its most-bounded parallel dispatch, cap the fan-out at the in-scope roles, and ensure workers are leaf workers that cannot spawn their own subagents — never an uncapped, recursion-capable dispatch.
 
 Each role prompt follows this shape:
 
@@ -69,15 +69,18 @@ If writer mode includes drafting (audit+draft or full-rewrite), also produce rep
 
 ## Parallel dispatch — exact pattern
 
-Use one tool-use message containing all role Agent calls. Example (concept, not copy-paste; adapt names and paths to the live session):
+One Workflow, all roles as parallel leaf workers. Example (concept, not copy-paste; adapt names and paths to the live session):
 
-- Agent call 1: `description: "Principal Engineer audit"`, prompt as above for engineering
-- Agent call 2: `description: "UI/UX audit"`, prompt for UX
-- Agent call 3: `description: "Technical Writer audit"`, prompt for writer
-- Agent call 4: `description: "Test Engineer audit"`, prompt for test
-- Agent call 5: `description: "QA audit"`, prompt for QA
+```js
+const summaries = await parallel(ROLES.map((r) => () =>
+  agent(rolePrompt(r), { label: `role:${r.key}`, model: 'sonnet', schema: SUMMARY })))
+```
 
-Issue all five in one message. Wait for the combined return.
+- one `agent()` per in-scope role — Principal Engineer, UI/UX, Technical Writer, Test Engineer, QA
+- `model: 'sonnet'` (or the host's mid-tier) — workers do the reading; the coordinator does the judgment
+- a structured-output schema for the terse summary keeps returns machine-readable
+
+Launch once; wait for the combined return.
 
 If the user scoped down (e.g., just UI/UX and QA), only dispatch those roles. Do not silently drop roles from a full-scope audit.
 
@@ -152,7 +155,7 @@ Before declaring done:
 
 ## Presenting the final package
 
-Use `mcp__cowork__present_files` to deliver the files. Order matters — the user should see the exec report first:
+Deliver the files with the host's file-presentation tool if one exists (`mcp__cowork__present_files` in Cowork, SendUserFile in Claude Code); on hosts without one, list the paths clearly in your final message — clickable links where the client supports them. Order matters — the user should see the exec report first:
 
 1. `00-executive-audit.md`
 2. `sprint-punchlist.md`
@@ -170,7 +173,8 @@ Give a short summary in the chat — 3–5 sentences covering severity roll-up, 
 
 ## Failure modes to avoid
 
-- **Sequential dispatch.** If you send the agents one at a time, you've doubled the wall-clock time for no reason. Parallelize.
+- **Sequential dispatch.** If you run the roles one at a time, you've multiplied the wall-clock time for no reason. Parallelize inside the Workflow.
+- **Bare-Agent dispatch.** Spawning roles as bare Agent calls (any `subagent_type`) instead of Workflow workers hands each role the ability to recurse into its own swarm — unbounded cost, no concurrency cap. This exact failure mode has burned six-figure token budgets in the wild. Workflow, always.
 - **Trusting the summaries without reading the deep-dives.** The summaries are terse; they miss the texture. Read the files.
 - **Silently skipping a role because it's "hard" or "no obvious scope."** If the scope is genuinely empty for a role (project has no UI so UX is moot), say so explicitly in the exec report. Don't omit.
 - **Calibrating findings against each other post-hoc.** The roles are intentionally independent. If the Engineer says the code is fine and the Test Engineer says the suite lies, both go in. State the tension.

@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>dev-rigor-stack — make "done" mean proven</title>
 <meta name="description" content="A six-gate delivery discipline for AI coding agents — the skills it runs, plus three always-on hooks: a rigor reflex, a per-task rigor router, and an enforced grounding check. Model-agnostic, tool-agnostic, MIT.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9C%85%3C/text%3E%3C/svg%3E">
+<meta property="og:type" content="website">
+<meta property="og:title" content="dev-rigor-stack — make &quot;done&quot; mean proven">
+<meta property="og:description" content="A six-gate delivery discipline for AI coding agents: six skills plus three always-on hooks — reflex, rigor router, and an enforced run-before-done grounding check. MIT.">
+<meta property="og:url" content="https://scottconverse.github.io/dev-rigor-stack/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="dev-rigor-stack — make &quot;done&quot; mean proven">
+<meta name="twitter:description" content="A six-gate delivery discipline for AI coding agents: six skills plus three always-on hooks. MIT.">
 <style>
   :root{
     --bg:#ffffff; --fg:#1a1c20; --muted:#5b6470; --card:#f6f7f9; --border:#e4e7ec;
@@ -22,9 +30,13 @@
   h1{font-size:2.6rem;margin:0 0 .3em;letter-spacing:-.02em}
   .tag{font-size:1.25rem;color:var(--muted);margin:0 auto;max-width:40ch}
   .cta{margin-top:28px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
-  a.btn{display:inline-block;padding:11px 20px;border-radius:8px;text-decoration:none;font-weight:600}
+  a.btn{display:inline-block;padding:11px 20px;border-radius:8px;text-decoration:none;font-weight:600;
+    transition:filter .15s ease, background .15s ease, border-color .15s ease}
   a.btn.primary{background:var(--accent);color:var(--accent-fg)}
+  a.btn.primary:hover,a.btn.primary:focus-visible{filter:brightness(1.15)}
   a.btn.ghost{border:1px solid var(--border);color:var(--fg)}
+  a.btn.ghost:hover,a.btn.ghost:focus-visible{border-color:var(--accent);background:var(--card)}
+  a.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   h2{font-size:1.5rem;margin:52px 0 12px;letter-spacing:-.01em}
   h3{font-size:1.12rem;margin:26px 0 8px}
   p{margin:0 0 1em}
@@ -46,8 +58,15 @@
   .callout{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--accent);
     border-radius:9px;padding:16px 18px;margin:16px 0}
   figure{margin:18px 0 6px}
-  .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;position:relative}
   figure svg{display:block;height:auto;min-width:660px;max-width:100%}
+  /* On narrow screens the diagrams pan rather than shrink below legibility —
+     make the pan affordance visible instead of leaving it to be discovered. */
+  @media (max-width:700px){
+    .scroll::after{content:"scroll \2192";position:sticky;left:100%;bottom:0;display:inline-block;
+      transform:translateX(-100%);background:var(--card);border:1px solid var(--border);
+      color:var(--muted);font-size:.75rem;padding:2px 8px;border-radius:6px;margin:4px 0}
+  }
   figure svg text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
   figcaption{color:var(--muted);font-size:.9rem;margin-top:8px;text-align:center}
   footer{margin:56px 0 40px;padding-top:20px;border-top:1px solid var(--border);color:var(--muted);font-size:.9rem}

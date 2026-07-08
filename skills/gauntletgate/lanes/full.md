@@ -32,9 +32,11 @@ when the Walkthrough lane ran, **consume its report** instead of re-walking the 
 2. **Stage the output dir** `gate-<project>-<YYYY-MM-DD>/` with placeholders.
 3. **If Walkthrough ran**, pass its report path to every role so UX/QA extend rather
    than duplicate it, and Engineering/Test can reference its wiring findings.
-4. **Dispatch the in-scope roles in parallel** — a single message with multiple
-   Agent calls, **or** a capped Workflow. **Cap the fan-out at the 5 roles**
-   (concurrency limit ≠ total cap — never let it stampede; one agent per role).
+4. **Dispatch the in-scope roles in parallel** — one Workflow, all roles as parallel
+   leaf workers on a cheaper model. Never a bare recursing Agent (any subagent_type):
+   a bare Agent can spawn its own swarm. On a host with no Workflow-class tool, use
+   its most-bounded dispatch under the same constraints. **Cap the fan-out at the 5
+   roles** (concurrency limit ≠ total cap — never let it stampede; one agent per role).
    Each role: reads the shared backbone + its focus, audits within scope, writes its
    deep-dive (`01-engineering` … `05-qa`), and returns a <300-word summary (severity
    counts, top 5, any Blockers, what it couldn't assess).

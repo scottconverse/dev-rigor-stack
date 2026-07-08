@@ -81,7 +81,7 @@ If escalation is warranted, the lite report still ships — but it ends with a c
 
 ### Step 5 — Present the file
 
-Use `present_files` to make the report visible. Do not declare audit-lite done until the file exists and any cross-references resolve.
+Make the report visible — via the host's file-presentation tool if it has one (`present_files` in Cowork, SendUserFile in Claude Code), otherwise by giving the path clearly in your final message. Do not declare audit-lite done until the file exists and any cross-references resolve.
 
 ---
 
@@ -203,6 +203,6 @@ Before declaring audit-lite complete, confirm:
 - [ ] Every Blocker and Critical has a blast-radius block
 - [ ] "What's working" is populated and specific
 - [ ] Escalation recommendation is explicit (yes or no, with reason)
-- [ ] Report file presented to the user via `present_files`
+- [ ] Report file delivered to the user (host presentation tool, or path clearly given)
 
 Then — and only then — tell the user the lite audit is ready.

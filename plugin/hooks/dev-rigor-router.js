@@ -18,7 +18,7 @@ const disciplinesDir = path.join(__dirname, '..', 'disciplines');
 
 // Investigation needs a symptom AND either a work verb or a code hint — a bare
 // "error"/"broken" in a non-code prompt (taxes, life advice) must not route.
-const SYMPTOM = /\b(bug|broken|fails?\b|failing|crash(es|ed|ing)?|error|exception|regression|repro(duce|duction)?|not working|doesn'?t work|why (is|does|isn'?t|doesn'?t|won'?t))\b/i;
+const SYMPTOM = /\b(bug|broken|fails?\b|failing|crash(es|ed|ing)?|error|exception|regression|deadlock|hang(s|ing)?|leak(s|ing)?|race condition|repro(duce|duction)?|not working|doesn'?t work|why (is|does|isn'?t|doesn'?t|won'?t))\b/i;
 const WORK_VERB = /\b(fix(es|ing)?|debug|investigate|diagnose|resolve|patch|repro(duce)?|root.?cause)\b/i;
 // Grounding words (form, page, screen, button...) occur in everyday non-code prompts
 // too — grounding also demands an action verb or code hint before routing.
@@ -33,8 +33,10 @@ const ROUTES = [
   {
     name: 'release',
     file: 'release.md',
+    // "release" needs release-verb or release-noun context — bare \brelease\b hijacks
+    // ordinary programming vocabulary ("the mutex release causes a deadlock").
     match: (p) =>
-      /\b(release|tag (a |the )?v?\d|tag (the |a )?(release|version|rc)|publish (the|a) (release|version|package)|cut (a |an |the )?(rc|release|version)|gauntletgate all|ship (it|the release|v?\d))\b/i.test(p),
+      /\b(cut|ship|prep(are)?|publish|finalize|start|run|do|make) (a |an |the |this )?(new )?release\b|\brelease (gate|process|checklist|candidate|notes|branch|build)\b|\btag (a |the )?v?\d|\btag (the |a )?(release|version|rc)\b|\bpublish (the|a) (release|version|package)\b|\bcut (a |an |the )?(rc|version)\b|\bgauntletgate all\b|\bship (it|v?\d)\b/i.test(p),
   },
   {
     name: 'decompose',

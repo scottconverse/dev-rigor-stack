@@ -15,6 +15,8 @@ const HOOKS = __dirname;
 const ROUTER = path.join(HOOKS, 'dev-rigor-router.js');
 const GROUND = path.join(HOOKS, 'dev-rigor-ground.js');
 const WIRE = path.join(HOOKS, 'wire-settings.js');
+const ACTIVATE = path.join(HOOKS, 'dev-rigor-activate.js');
+const REPO = path.join(HOOKS, '..', '..');
 
 let tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'dev-rigor-test-'));
 let n = 0;
@@ -141,6 +143,24 @@ test('router: missing session_id injects without persisting dedupe', () => {
   assert.match(second, /INVESTIGATION/i, 'no session_id means no shared dedupe bucket');
 });
 
+// ---------- router: adversarial vocabulary (audit finding TEST-003) ----------
+
+test('router: "mutex release" bug prompt routes to investigation, not release', () => {
+  const out = routerOut('The mutex release causes a deadlock under load, fix it.', freshDir());
+  assert.match(out, /INVESTIGATION/i, 'programming vocabulary "release" must not trigger release discipline');
+  assert.doesNotMatch(out, /RELEASE DISCIPLINE/i);
+});
+
+test('router: "releases the lock" prompt does not trigger release discipline', () => {
+  const out = routerOut('The handler never releases the file lock, debug why it fails.', freshDir());
+  assert.doesNotMatch(out, /RELEASE DISCIPLINE/i);
+});
+
+test('router: "prepare the release" still routes to release', () => {
+  const out = routerOut('Prepare the release once CI is green.', freshDir());
+  assert.match(out, /RELEASE DISCIPLINE/i);
+});
+
 // ---------- router: robustness ----------
 
 test('router: garbage stdin exits 0 and stays silent', () => {
@@ -229,7 +249,8 @@ test('ground: concurrent records lose no writes (append-only ledger)', async () 
   const cfg = freshDir();
   const { execFile } = require('child_process');
   const runs = [];
-  for (let i = 0; i < 12; i++) {
+  const N = 40; // audit finding TEST-007: sized to a realistic session's tool-call burst
+  for (let i = 0; i < N; i++) {
     runs.push(new Promise((resolve, reject) => {
       const child = execFile('node', [GROUND, 'record'],
         { env: { ...process.env, CLAUDE_CONFIG_DIR: cfg } },
@@ -240,7 +261,7 @@ test('ground: concurrent records lose no writes (append-only ledger)', async () 
   await Promise.all(runs);
   const lines = fs.readFileSync(path.join(cfg, 'dev-rigor-plugin', 'state', 'ground-race1.log'), 'utf8')
     .split('\n').filter(Boolean);
-  assert.strictEqual(lines.length, 12, `expected 12 exec lines, got ${lines.length}`);
+  assert.strictEqual(lines.length, N, `expected ${N} exec lines, got ${lines.length}`);
 });
 
 test('ground: garbage stdin exits 0 silently', () => {
@@ -302,6 +323,82 @@ test('wire-settings: updates a stale dev-rigor entry in place', () => {
   assert.notStrictEqual(ours[0].matcher, 'OLD|NARROW', 'matcher must be updated');
   assert.match(ours[0].matcher, /jupyter/, 'current matcher expected');
   assert.match(JSON.stringify(s.hooks.PostToolUse), /my-other-hook/, 'foreign entry must survive');
+});
+
+test('wire-settings: refuses a structurally-unexpected settings.json without crashing', () => {
+  const cfg = freshDir();
+  const weird = JSON.stringify({ hooks: { PostToolUse: { not: 'an array' } } });
+  fs.writeFileSync(path.join(cfg, 'settings.json'), weird);
+  let status = 0, stderr = '';
+  try {
+    execFileSync('node', [WIRE, cfg], { encoding: 'utf8', stdio: 'pipe' });
+  } catch (e) {
+    status = e.status; stderr = String(e.stderr || '');
+  }
+  assert.strictEqual(status, 1, 'must exit 1, not crash with an uncaught exception');
+  assert.doesNotMatch(stderr, /TypeError|at Object|at Module/, 'no raw stack trace');
+  assert.match(stderr, /FAIL/, 'must print a clear refusal message');
+  assert.strictEqual(fs.readFileSync(path.join(cfg, 'settings.json'), 'utf8'), weird,
+    'the file must be left untouched');
+});
+
+// ---------- reflex activation hook (audit finding TEST-002) ----------
+
+test('activate: default mode emits the reflex text verbatim', () => {
+  const expected = fs.readFileSync(path.join(HOOKS, '..', 'dev-rigor-reflex.md'), 'utf8').replace(/^﻿/, '');
+  const out = execFileSync('node', [ACTIVATE], { encoding: 'utf8' });
+  assert.strictEqual(out, expected);
+  assert.ok(out.length > 200, 'reflex payload should be substantial');
+});
+
+test('activate: subagent mode emits valid SubagentStart JSON carrying the reflex', () => {
+  const expected = fs.readFileSync(path.join(HOOKS, '..', 'dev-rigor-reflex.md'), 'utf8').replace(/^﻿/, '');
+  const out = execFileSync('node', [ACTIVATE, 'subagent'], { encoding: 'utf8' });
+  const j = JSON.parse(out);
+  assert.strictEqual(j.hookSpecificOutput.hookEventName, 'SubagentStart');
+  assert.strictEqual(j.hookSpecificOutput.additionalContext, expected);
+});
+
+test('activate: missing reflex file exits 0 with empty output', () => {
+  const tmp = path.join(freshDir(), 'hooks');
+  fs.mkdirSync(tmp, { recursive: true });
+  const copied = path.join(tmp, 'dev-rigor-activate.js');
+  fs.copyFileSync(ACTIVATE, copied); // parent dir has no dev-rigor-reflex.md
+  const out = execFileSync('node', [copied], { encoding: 'utf8' });
+  assert.strictEqual(out, '', 'no reflex file -> silence, never a session-breaking error');
+});
+
+// ---------- repo content integrity (audit findings TEST-001 / QA-002 / TEST-006) ----------
+
+function trackedTextFiles() {
+  const { execSync } = require('child_process');
+  return execSync('git ls-files', { cwd: REPO, encoding: 'utf8' })
+    .split('\n').filter((f) => /\.(md|js|json|sh|ps1|html|yml|yaml|py)$/.test(f));
+}
+
+test('integrity: no tracked text file contains NUL bytes', () => {
+  const bad = trackedTextFiles().filter((f) => fs.readFileSync(path.join(REPO, f)).includes(0));
+  assert.deepStrictEqual(bad, [], 'NUL bytes found in: ' + bad.join(', '));
+});
+
+test('integrity: no tracked text file contains UTF-8 mojibake or a BOM', () => {
+  const bad = [];
+  for (const f of trackedTextFiles()) {
+    const b = fs.readFileSync(path.join(REPO, f));
+    if (b.slice(0, 3).equals(Buffer.from([0xef, 0xbb, 0xbf]))) bad.push(f + ' (BOM)');
+    const s = b.toString('utf8');
+    // Pattern built from escapes so this file's own source can't self-flag.
+    const mojibake = new RegExp('\u00e2\u20ac|\u00c3\u00a2|\ufffd');
+    if (mojibake.test(s)) bad.push(f + ' (mojibake)');
+  }
+  assert.deepStrictEqual(bad, []);
+});
+
+test('integrity: hook payload markdown ships with LF line endings', () => {
+  const payloads = ['dev-rigor-reflex.md', 'disciplines/investigation.md', 'disciplines/grounding.md',
+    'disciplines/decompose.md', 'disciplines/release.md'];
+  const bad = payloads.filter((p) => fs.readFileSync(path.join(HOOKS, '..', p)).includes(Buffer.from('\r\n')[0]));
+  assert.deepStrictEqual(bad, [], 'CRLF found in payload files: ' + bad.join(', '));
 });
 
 test('wire-settings: preserves pre-existing foreign hooks', () => {
