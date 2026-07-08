@@ -72,8 +72,12 @@ if ((-not $Target) -and (Test-Path $PluginSrc)) {
 }
 
 Write-Host "`nNext steps:"
-Write-Host "  * The reflex activates on your next session start (or /compact); the rigor router and"
-Write-Host "    grounding check activate immediately for new sessions. Nothing else to run."
+if (-not $Target) {
+  Write-Host "  * The reflex activates on your next session start (or /compact); the rigor router and"
+  Write-Host "    grounding check activate immediately for new sessions. Nothing else to run."
+} else {
+  Write-Host "  * Skills only were installed (-Target); the always-on hooks were not wired."
+}
 Write-Host "  * Optional: fold config/CLAUDE.md into your own ~/.claude/CLAUDE.md so the stack applies"
 Write-Host "    automatically even without the hook. Review it first -- do not blindly overwrite your CLAUDE.md."
 Write-Host "  * Restart your agent (or reload skills) so it picks up the new skills."

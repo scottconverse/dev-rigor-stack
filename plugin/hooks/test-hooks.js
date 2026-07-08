@@ -106,6 +106,41 @@ test('router: a different discipline still injects after the first', () => {
   assert.match(out, /GROUNDING/i);
 });
 
+// ---------- router: structure outranks topic (review finding) ----------
+
+test('router: multi-part UI prompt routes to decompose, not grounding', () => {
+  const out = routerOut(
+    'Implement the settings page: 1) add a dark mode toggle 2) add a layout width control 3) add a font size selector, and wire them to the theme store.',
+    freshDir());
+  assert.match(out, /DECOMPOS/i, 'structural multi-part signal must outrank UI words');
+});
+
+test('router: multi-bug list prompt routes to decompose, not investigation', () => {
+  const out = routerOut(
+    'Fix these bugs: 1) login crash on submit 2) broken pagination 3) the export button error, and add regression tests for each.',
+    freshDir());
+  assert.match(out, /DECOMPOS/i, 'structural multi-part signal must outrank bug words');
+});
+
+test('router: single-bug prompt still routes to investigation', () => {
+  const out = routerOut('Fix the crash in the parser, it fails on empty input.', freshDir());
+  assert.match(out, /INVESTIGATION/i);
+});
+
+test('router: non-code prompt with "error" stays silent', () => {
+  const out = routerOut('I made an error filling out the form for my taxes, any advice?', freshDir());
+  assert.strictEqual(out.trim(), '', 'symptom word without work verb or code hint must not route');
+});
+
+test('router: missing session_id injects without persisting dedupe', () => {
+  const cfg = freshDir();
+  const input = { hook_event_name: 'UserPromptSubmit', prompt: 'Fix the crash in the parser, it keeps failing.' };
+  const first = runHook(ROUTER, input, cfg);
+  const second = runHook(ROUTER, input, cfg);
+  assert.match(first, /INVESTIGATION/i);
+  assert.match(second, /INVESTIGATION/i, 'no session_id means no shared dedupe bucket');
+});
+
 // ---------- router: robustness ----------
 
 test('router: garbage stdin exits 0 and stays silent', () => {
@@ -176,6 +211,38 @@ test('ground: no edits at all never blocks', () => {
   assert.strictEqual(stopCheck(freshDir(), 'g7').trim(), '');
 });
 
+test('ground: unforeseen execution tools count as execution (no false block)', () => {
+  const cfg = freshDir();
+  record(cfg, 'g8', 'Edit', { file_path: '/proj/app.py' });
+  record(cfg, 'g8', 'mcp__ide__executeCode', { code: 'pytest' });
+  assert.strictEqual(stopCheck(cfg, 'g8').trim(), '', 'any non-edit tool reaching the hook is execution');
+});
+
+test('ground: missing session_id records nothing and never blocks', () => {
+  const cfg = freshDir();
+  runHook(GROUND, { hook_event_name: 'PostToolUse', tool_name: 'Edit', tool_input: { file_path: '/proj/a.py' } }, cfg, ['record']);
+  const out = runHook(GROUND, { hook_event_name: 'Stop', stop_hook_active: false }, cfg, ['check']);
+  assert.strictEqual(out.trim(), '');
+});
+
+test('ground: concurrent records lose no writes (append-only ledger)', async () => {
+  const cfg = freshDir();
+  const { execFile } = require('child_process');
+  const runs = [];
+  for (let i = 0; i < 12; i++) {
+    runs.push(new Promise((resolve, reject) => {
+      const child = execFile('node', [GROUND, 'record'],
+        { env: { ...process.env, CLAUDE_CONFIG_DIR: cfg } },
+        (err) => (err ? reject(err) : resolve()));
+      child.stdin.end(JSON.stringify({ session_id: 'race1', hook_event_name: 'PostToolUse', tool_name: 'Bash', tool_input: { command: 'true' } }));
+    }));
+  }
+  await Promise.all(runs);
+  const lines = fs.readFileSync(path.join(cfg, 'dev-rigor-plugin', 'state', 'ground-race1.log'), 'utf8')
+    .split('\n').filter(Boolean);
+  assert.strictEqual(lines.length, 12, `expected 12 exec lines, got ${lines.length}`);
+});
+
 test('ground: garbage stdin exits 0 silently', () => {
   const out = execFileSync('node', [GROUND, 'check'], {
     input: '{{{',
@@ -202,6 +269,22 @@ test('wire-settings: wires all hook events and is idempotent', () => {
   assert.deepStrictEqual(s2, s1, 'second run must not duplicate entries');
 });
 
+test('wire-settings: refuses to clobber a corrupt settings.json', () => {
+  const cfg = freshDir();
+  const corrupt = '{ "permissions": { "allow": ["Bash"] }, }'; // trailing comma -> invalid
+  fs.writeFileSync(path.join(cfg, 'settings.json'), corrupt);
+  let failed = false;
+  try {
+    execFileSync('node', [WIRE, cfg], { encoding: 'utf8', stdio: 'pipe' });
+  } catch (e) {
+    failed = true;
+    assert.notStrictEqual(e.status, 0);
+  }
+  assert.ok(failed, 'must exit non-zero on unparseable settings');
+  assert.strictEqual(fs.readFileSync(path.join(cfg, 'settings.json'), 'utf8'), corrupt,
+    'the corrupt file must be left byte-identical, never overwritten');
+});
+
 test('wire-settings: preserves pre-existing foreign hooks', () => {
   const cfg = freshDir();
   fs.writeFileSync(path.join(cfg, 'settings.json'), JSON.stringify({
@@ -215,19 +298,21 @@ test('wire-settings: preserves pre-existing foreign hooks', () => {
 
 // ---------- run ----------
 
-let failed = 0;
-for (const [name, fn] of tests) {
-  try {
-    fn();
-    console.log('  ok    ' + name);
-  } catch (e) {
-    failed++;
-    console.error('  FAIL  ' + name + '\n        ' + String(e.message).split('\n')[0]);
+(async () => {
+  let failed = 0;
+  for (const [name, fn] of tests) {
+    try {
+      await fn(); // sync tests return undefined; the concurrency test returns a promise
+      console.log('  ok    ' + name);
+    } catch (e) {
+      failed++;
+      console.error('  FAIL  ' + name + '\n        ' + String(e.message).split('\n')[0]);
+    }
   }
-}
-fs.rmSync(tmpRoot, { recursive: true, force: true });
-if (failed) {
-  console.error(`\n${failed}/${tests.length} FAILED`);
-  process.exit(1);
-}
-console.log(`\nALL PASS (${tests.length} tests)`);
+  fs.rmSync(tmpRoot, { recursive: true, force: true });
+  if (failed) {
+    console.error(`\n${failed}/${tests.length} FAILED`);
+    process.exit(1);
+  }
+  console.log(`\nALL PASS (${tests.length} tests)`);
+})();

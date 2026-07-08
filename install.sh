@@ -85,8 +85,12 @@ fi
 
 echo
 echo "Next steps:"
-echo "  * The reflex activates on your next session start (or /compact); the rigor router and"
-echo "    grounding check activate immediately for new sessions. Nothing else to run."
+if [ -z "$TARGET" ]; then
+  echo "  * The reflex activates on your next session start (or /compact); the rigor router and"
+  echo "    grounding check activate immediately for new sessions. Nothing else to run."
+else
+  echo "  * Skills only were installed (--target); the always-on hooks were not wired."
+fi
 echo "  * Optional: fold config/CLAUDE.md into your own ~/.claude/CLAUDE.md so the stack applies"
 echo "    automatically even without the hook. Review it first -- do not blindly overwrite your CLAUDE.md."
 echo "  * Restart your agent (or reload skills) so it picks up the new skills."

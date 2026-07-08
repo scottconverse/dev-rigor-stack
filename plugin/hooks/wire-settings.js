@@ -20,10 +20,16 @@ const router = hookPath('dev-rigor-router.js');
 const ground = hookPath('dev-rigor-ground.js');
 
 let s = {};
-try {
-  s = JSON.parse(fs.readFileSync(settingsPath, 'utf8').replace(/^﻿/, ''));
-} catch (e) {
-  s = {}; // no settings yet, or unreadable -> start a fresh object
+if (fs.existsSync(settingsPath)) {
+  // An existing-but-unparseable settings.json must ABORT, not be silently replaced —
+  // overwriting it would destroy the user's permissions, env, and foreign hooks.
+  try {
+    s = JSON.parse(fs.readFileSync(settingsPath, 'utf8').replace(/^﻿/, ''));
+  } catch (e) {
+    console.error('  FAIL  ' + settingsPath + ' exists but is not valid JSON (' + e.message + ').');
+    console.error('        Refusing to touch it — fix the file (or remove it) and re-run.');
+    process.exit(1);
+  }
 }
 s.hooks = s.hooks || {};
 for (const ev of ['SessionStart', 'SubagentStart', 'UserPromptSubmit', 'PostToolUse', 'Stop']) {
@@ -51,8 +57,11 @@ wire('UserPromptSubmit', 'dev-rigor-router', {
   hooks: [{ type: 'command', command: `node "${router}"; exit 0`, timeout: 5, statusMessage: 'Routing rigor...' }],
 });
 wire('PostToolUse', 'dev-rigor-ground', {
-  // Only the tools the ledger cares about: edits to files, and execution/observation tools.
-  matcher: 'Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell|.*preview.*|.*chrome.*|.*computer.*',
+  // Only the tools the ledger cares about: edits to files, and execution/observation
+  // tools. The exec side is deliberately broad (exec/run/test/shell/terminal/jupyter/
+  // notebook/ide/eval) — a legitimate execution the matcher misses would make the Stop
+  // check block falsely, so unknown exec-ish tools must be let through.
+  matcher: 'Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell|.*(preview|chrome|browser|computer|screenshot|navigate|snapshot|exec|run|test|shell|terminal|jupyter|notebook|ide|eval).*',
   hooks: [{ type: 'command', command: `node "${ground}" record; exit 0`, timeout: 5 }],
 });
 wire('Stop', 'dev-rigor-ground', {
