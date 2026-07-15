@@ -1,5 +1,14 @@
 # dev-rigor-stack
 
+> [!IMPORTANT]
+> **Superseded.** The new
+> [dev-rigor-stack-lite](https://github.com/scottconverse/dev-rigor-stack-lite)
+> supersedes this hooks-based, Claude-Code-specific version and should be used instead.
+> Lite carries the same 19-skill workflow without the hook runtime, runs on any
+> Agent-Skills host (Claude Code, Codex, Antigravity), and replaces the hooks'
+> enforcement with a persistent anchor block plus the `rigor-goals` exit-gate CLI —
+> both installed by default. This repository is frozen at v1.5.1.
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 A six-gate delivery discipline for AI coding agents — the skills it runs, and three
