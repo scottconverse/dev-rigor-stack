@@ -2,6 +2,18 @@
 
 All notable changes to dev-rigor-stack. Dates are release (tag) dates.
 
+## Unreleased (post-freeze amendment)
+
+- **Added:** VERIFY now consumes the deterministic-detector harness
+  ([scottconverse/deterministic-detector](https://github.com/scottconverse/deterministic-detector))
+  proportionally to blast radius when a repo has it installed — randomized-order
+  CI pass as the medium+ test-evidence standard; advisory mutation report
+  required-present (never solely red) at high blast / release; required-status
+  flips remain owner-only. Degrades silently in repos without the harness.
+  Sync amendment only: the repo remains frozen at v1.5.1 (superseded by
+  dev-rigor-stack-lite); this keeps the vendored skill identical to the
+  maintained installed copy. No tag without owner go.
+
 ## v1.5.1 — 2026-07-08
 
 Drive-to-zero release: every finding from a full five-role audit of v1.5.0
