@@ -1,0 +1,15 @@
+[
+  {
+    "_comment": "Sanctioned lite->full rewrites for the detector-proportionality SHARED-BLOCK. These are the ONLY blessed differences between the dev-rigor-stack and dev-rigor-stack-lite copies; any other drift fails the lite-parity CI job. Applied after whitespace collapse by fleet-smoke's parity_check.py.",
+    "from": "[deterministic-detector](https://github.com/scottconverse/deterministic-detector) CI jobs, plus its editor hook on hosts that support it; degrade silently if absent",
+    "to": "deterministic-detector plugin + its CI jobs; degrade silently if absent"
+  },
+  {
+    "from": "Low blast: same-turn lint feedback is enough",
+    "to": "Low blast: the plugin's ruff hook feedback is enough"
+  },
+  {
+    "from": "no agent ever touches required-status-check or branch-protection settings",
+    "to": "no agent ever touches the required-status flip"
+  }
+]
