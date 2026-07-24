@@ -6,6 +6,34 @@ on:
   pull_request:
 
 jobs:
+  # The detector-proportionality rule lives in two repos (this one and
+  # dev-rigor-stack-lite), deliberately host-adapted. This job fails any push
+  # that lets the copies drift outside the sanctioned substitutions in
+  # tools/parity-substitutions.json. Comparator = fleet-smoke's parity_check
+  # (pinned by SHA; bump deliberately).
+  lite-parity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: scottconverse/dev-rigor-stack-lite
+          ref: main
+          path: _lite
+      - uses: actions/checkout@v4
+        with:
+          repository: scottconverse/fleet-smoke
+          ref: 301114950f929ca9adb9d31d53426ada96f9713a
+          path: _fleet-smoke
+      - name: Cross-repo SHARED-BLOCK parity
+        run: |
+          python3 _fleet-smoke/scripts/parity_check.py \
+            --mode shared-blocks \
+            --substitutions tools/parity-substitutions.json \
+            --collapse-ws \
+            skills/dev-rigor-stack/SKILL.md \
+            _lite/skills/dev-rigor-stack-lite/SKILL.md
+
   test:
     strategy:
       matrix:

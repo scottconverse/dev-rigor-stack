@@ -4,6 +4,12 @@ All notable changes to dev-rigor-stack. Dates are release (tag) dates.
 
 ## Unreleased (post-freeze amendment)
 
+- **Added:** `lite-parity` CI job — the detector-proportionality rule is now
+  fenced with SHARED-BLOCK markers here and in dev-rigor-stack-lite, and every
+  push cross-diffs the two copies (comparator: fleet-smoke's `parity_check.py`,
+  pinned by SHA). Host-adapted wording is sanctioned only via the committed
+  `tools/parity-substitutions.json`; any other drift fails CI. Markers are
+  HTML comments — no rendered or behavioral change to the skill.
 - **Added:** VERIFY now consumes the deterministic-detector harness
   ([scottconverse/deterministic-detector](https://github.com/scottconverse/deterministic-detector))
   proportionally to blast radius when a repo has it installed — randomized-order
